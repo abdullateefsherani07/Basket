@@ -22,7 +22,7 @@ To run this project, follow these steps:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/your-username/bucket.git
+   git clone https://github.com/abdullateefsherani07/bucket.git
    ```
 
 2. Open the project in Android Studio.
