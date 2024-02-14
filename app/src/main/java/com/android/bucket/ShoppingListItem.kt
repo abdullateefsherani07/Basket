@@ -325,7 +325,6 @@ fun ShoppingItemEditor(item: ShoppingListItem, onEditComplete: (String, Int) -> 
                 Text("Save")
             }
         }
-
     }
 }
 
@@ -384,7 +383,6 @@ fun ShoppingItem(
                 Icon(Icons.Filled.Delete, contentDescription = "")
             }
         }
-
     }
 }
 
