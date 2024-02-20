@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
 import com.android.bucket.ui.theme.BucketTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val viewModel = ViewModelProvider(this).get(ShoppingViewModel::class.java)
         setContent {
             BucketTheme {
                 // A surface container using the 'background' color from the theme
@@ -20,7 +22,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
 //                    Calling main app
-                    BucketApp()
+                    ShoppingItemsScreen(viewModel)
                 }
             }
         }
