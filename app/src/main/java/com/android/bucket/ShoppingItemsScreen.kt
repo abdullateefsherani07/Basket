@@ -1,5 +1,6 @@
 package com.android.bucket
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,15 +16,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
@@ -43,25 +44,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.android.bucket.ui.theme.BucketTheme
-
-data class ShoppingListItem(
-    var id: Int,
-    var name: String,
-    var quantity: Int,
-    var isEditing: Boolean = false
-)
 
 data class BottomNavigationItem(
     val title: String,
@@ -69,13 +64,22 @@ data class BottomNavigationItem(
     val unSelectedIcon: ImageVector,
 )
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BucketApp(){
-    var sItems by remember{ mutableStateOf(listOf<ShoppingListItem>()) }
+fun ShoppingItemsScreen(viewModel: ShoppingViewModel){
     var showDialog by remember { mutableStateOf(false) }
     var itemName by remember { mutableStateOf("") }
     var itemQuantity by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    var shoppingItemsState by remember { mutableStateOf(listOf<ShoppingItemEntity>()) }
+
+    LaunchedEffect(viewModel.shoppingItems) {
+        viewModel.shoppingItems.collect { shoppingItemsState = it }
+    }
+
+    var shoppingItems = shoppingItemsState
 
     Scaffold(
         topBar = {
@@ -85,7 +89,7 @@ fun BucketApp(){
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 title = {
-                    Text("Bucket")
+                    Text(stringResource(R.string.app_name))
                 }
             )
         },
@@ -108,9 +112,9 @@ fun BucketApp(){
                     Icons.Outlined.Notifications
                 ),
                 BottomNavigationItem(
-                    "More",
-                    Icons.Filled.MoreVert,
-                    Icons.Outlined.MoreVert
+                    "Profile",
+                    Icons.Filled.AccountCircle,
+                    Icons.Outlined.AccountCircle
                 )
             )
             NavigationBar {
@@ -144,7 +148,7 @@ fun BucketApp(){
                 .padding(innerPadding),
             verticalArrangement = Arrangement.Center
         ){
-            if (sItems.isNotEmpty()){
+            if (shoppingItems.isNotEmpty()){
                 Row(
                     modifier = Modifier
                         .padding(16.dp, 16.dp, 16.dp, 0.dp)
@@ -158,13 +162,6 @@ fun BucketApp(){
                             shape = RoundedCornerShape(20)
                         )
                 ){
-                    Text(
-                        text = "S",
-                        modifier = Modifier
-                            .padding(15.dp, 8.dp, 8.dp, 8.dp)
-                            .width(16.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
                     Text(
                         text = "Name",
                         modifier = Modifier
@@ -186,25 +183,28 @@ fun BucketApp(){
                     .fillMaxSize()
                     .padding(16.dp)
             ){
-                items(sItems){
+                items(shoppingItems){
                     item ->
                     if (item.isEditing){
-                        ShoppingItemEditor(item = item, onEditComplete = { editedName, editedQuantity ->
-                            sItems = sItems.map{it.copy(isEditing = false)}
-                            val editedItem = sItems.find{ it.id == item.id}
+                        ShoppingItemEditor(item = item, onEditComplete = {editedName, editedQuantity ->
+                            shoppingItems = shoppingItems.map{it.copy(isEditing = false)}
+                            val editedItem = shoppingItems.find{it.id == item.id}
                             editedItem?.let{
                                 it.name = editedName
                                 it.quantity = editedQuantity
+                                viewModel.updateShoppingItem(editedItem)
                             }
+
                         })
                     } else{
                         ShoppingItem(
                             item = item,
                             onEditClick = {
-                                sItems = sItems.map{it.copy(isEditing = it.id == item.id)}
+                                shoppingItems = shoppingItemsState.map{it.copy(isEditing = it.id == item.id)}
+                                viewModel.setEditingItem(item)
                             },
                             onDeleteClick = {
-                                sItems = sItems - item
+                                viewModel.deleteShoppingItem(item)
                             }
                         )
                     }
@@ -220,15 +220,10 @@ fun BucketApp(){
             confirmButton = {
                 Button(onClick = {
                     if (itemName.isNotBlank() && itemQuantity.isNotBlank()){
-                        val newItem = ShoppingListItem(
-                            id =sItems.size + 1,
-                            name = itemName,
-                            quantity = itemQuantity.toInt()
-                        )
-                        sItems += newItem
+                        viewModel.insertShoppingItem(name = itemName, quantity = itemQuantity.toInt())
                         showDialog = false
-                        itemName = ""
-                        itemQuantity = ""
+                    }else{
+                        Toast.makeText(context, "Please enter name and quantity", Toast.LENGTH_SHORT).show()
                     }
                 }) {
                     Text("Add Item")
@@ -268,10 +263,9 @@ fun BucketApp(){
 }
 
 @Composable
-fun ShoppingItemEditor(item: ShoppingListItem, onEditComplete: (String, Int) -> Unit){
+fun ShoppingItemEditor(item: ShoppingItemEntity, onEditComplete: (String, Int) -> Unit){
     var editedName by remember { mutableStateOf(item.name) }
     var editedQuantity by remember { mutableStateOf(item.quantity.toString()) }
-    var isEditing by remember { mutableStateOf(item.isEditing) }
 
     Column(
         modifier = Modifier
@@ -309,7 +303,6 @@ fun ShoppingItemEditor(item: ShoppingListItem, onEditComplete: (String, Int) -> 
         ) {
             Button(
                 onClick = {
-                    isEditing = false
                     onEditComplete(editedName, editedQuantity.toIntOrNull() ?: 1)
                 },
                 modifier = Modifier.weight(1f),
@@ -323,8 +316,8 @@ fun ShoppingItemEditor(item: ShoppingListItem, onEditComplete: (String, Int) -> 
 
 @Composable
 fun ShoppingItem(
-    item: ShoppingListItem,
-    onEditClick: () -> Unit,
+    item: ShoppingItemEntity,
+    onEditClick: (ShoppingItemEntity) -> Unit,
     onDeleteClick: () -> Unit,
 ){
     Row(
@@ -338,12 +331,6 @@ fun ShoppingItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ){
-        Text(
-            text = item.id.toString(),
-            modifier = Modifier
-                .padding(15.dp, 8.dp, 8.dp, 8.dp)
-                .width(16.dp)
-        )
         Text(
             text = item.name,
             maxLines = 1,
@@ -362,7 +349,7 @@ fun ShoppingItem(
             horizontalArrangement = Arrangement.End
         ){
             IconButton(
-                onClick = onEditClick,
+                onClick = { onEditClick(item) },
                 modifier = Modifier.width(50.dp),
                 colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)
             ) {
@@ -376,13 +363,5 @@ fun ShoppingItem(
                 Icon(Icons.Filled.Delete, contentDescription = "")
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BucketAppPreview() {
-    BucketTheme {
-        BucketApp()
     }
 }
