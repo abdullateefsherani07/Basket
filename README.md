@@ -12,10 +12,6 @@ Bucket is a simple shopping list app built for Android using Kotlin and Jetpack 
 - Clean and intuitive user interface
 - Fully customizable with Jetpack Compose
 
-## Screenshots
-
-_Insert screenshots of your app here_
-
 ## Setup
 
 To run this project, follow these steps:
