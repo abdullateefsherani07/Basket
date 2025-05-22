@@ -1,8 +1,8 @@
-# Bucket - Shopping List App
+# Basket - Shopping List App
 
 ## Overview
 
-Bucket is a simple shopping list app built for Android using Kotlin and Jetpack Compose. It allows users to create, edit, and delete shopping items easily.
+Basket is a simple shopping list app built for Android using Kotlin and Jetpack Compose. It allows users to create, edit, and delete shopping items easily.
 
 ## Features
 
